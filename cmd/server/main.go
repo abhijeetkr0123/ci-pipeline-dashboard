@@ -1,24 +1,32 @@
 package main
 
 import (
-    "fmt"
-    "log"
-    "net/http"
+	"fmt"
+	"log"
+	"net/http"
+	"os"
 
-    "github.com/go-chi/chi/v5"
-    "github.com/abhijeet/ci-pipeline-dashboard/internal/handlers"
- // adjust module path
+	"github.com/abhijeet/ci-pipeline-dashboard/internal/db"
+	"github.com/abhijeet/ci-pipeline-dashboard/internal/handlers"
+	"github.com/joho/godotenv"
 )
 
 func main() {
-    r := chi.NewRouter()
+	// Load environment variables
+	if err := godotenv.Load(); err != nil {
+		log.Println("⚠️  No .env file found, using system environment variables")
+	}
 
-    r.Get("/", func(w http.ResponseWriter, r *http.Request) {
-        fmt.Fprintln(w, "Server is running!")
-    })
+	// Initialize Supabase client
+	db.InitDB()
 
-    r.Post("/webhook", handlers.WebhookHandler) // your POST endpoint
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
+	}
 
-    fmt.Println("Server running on :8080")
-    log.Fatal(http.ListenAndServe(":8080", r))
+	http.HandleFunc("/webhook", handlers.WebhookHandler)
+
+	fmt.Printf("🚀 Server running on http://localhost:%s\n", port)
+	log.Fatal(http.ListenAndServe(":"+port, nil))
 }
