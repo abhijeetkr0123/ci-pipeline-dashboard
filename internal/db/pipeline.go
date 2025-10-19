@@ -1,34 +1,23 @@
 package db
 
 import (
-	"log"
+	"time"
 )
 
 // Pipeline struct matches your Supabase table columns
 type Pipeline struct {
-	WorkflowName string `json:"workflow_name"`
-	RepoName     string `json:"repo_name"`
-	Status       string `json:"status"`
-	Conclusion   string `json:"conclusion"`
-	Actor        string `json:"actor"`
-	CreatedAt    string `json:"created_at"`
+	ID           int64     `json:"id"`
+	WorkflowName string    `json:"workflow_name"`
+	RepoName     string    `json:"repo_name"`
+	Actor        string    `json:"actor"`
+	Status       string    `json:"status"`
+	Conclusion   string    `json:"conclusion"`
+	CreatedAt    time.Time `json:"created_at"`
+	UpdatedAt    time.Time `json:"updated_at"`
+	RunNumber    int       `json:"run_number"`
+	HeadBranch   string    `json:"head_branch"`
+	HeadSha      string    `json:"head_sha"`
+	DurationSec  int       `json:"duration_sec"`
 }
 
 // InsertPipeline inserts a pipeline into Supabase
-func InsertPipeline(p Pipeline) error {
-	// Wrap pipeline in a slice for Insert
-	data := []Pipeline{p}
-
-	// Use a variable to capture returned rows (can ignore if you don't need them)
-	var result []Pipeline
-
-	// Execute insert
-	err := Client.DB.From("pipelines").Insert(data).Execute(&result)
-	if err != nil {
-		log.Println("❌ Error inserting pipeline:", err)
-		return err
-	}
-
-	log.Println("✅ Pipeline inserted successfully")
-	return nil
-}
