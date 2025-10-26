@@ -1,9 +1,0 @@
-services:
-  - type: web
-    name: ci-pipeline-backend
-    env: go
-    plan: free
-    rootDir: backend
-    buildCommand: go build -tags netgo -ldflags '-s -w' -o app ./cmd/server
-    startCommand: ./app
-    goVersion: 1.25.3
