@@ -1,0 +1,7 @@
+{
+  "workflow": { "name": "CI Pipeline" },
+  "repository": { "name": "my-repo" },
+  "status": "completed",
+  "conclusion": "success",
+  "actor": { "login": "abhijeet" }
+}
