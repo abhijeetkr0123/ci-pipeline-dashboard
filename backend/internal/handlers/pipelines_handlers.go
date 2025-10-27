@@ -4,14 +4,13 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/abhijeet/ci-pipeline-dashboard/internal/db"
 )
 
-// ==============================
 // GET /api/pipelines (List view)
-// ==============================
 func GetPipelinesHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
@@ -33,6 +32,7 @@ func GetPipelinesHandler(w http.ResponseWriter, r *http.Request) {
 	log.Printf("Fetched pipelines: %+v\n", pipelines)
 
 	type PipelineListItem struct {
+		ID        string `json:"id"`
 		RunID     int64  `json:"runId"`
 		Status    string `json:"status"`
 		Branch    string `json:"branch"`
@@ -68,6 +68,7 @@ func GetPipelinesHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		response = append(response, PipelineListItem{
+			ID:        p.ID,
 			RunID:     p.RunID,
 			Status:    p.Status,
 			Branch:    branch,
@@ -81,18 +82,20 @@ func GetPipelinesHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(response)
 }
 
-// =================================
 // GET /api/pipelines/details?id=<uuid>
-// =================================
 func GetPipelineDetailsHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
 	if r.Method != http.MethodGet {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		json.NewEncoder(w).Encode(map[string]string{"error": "Method not allowed"})
 		return
 	}
 
 	pipelineID := r.URL.Query().Get("id")
 	if pipelineID == "" {
-		http.Error(w, "Missing pipeline id", http.StatusBadRequest)
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(map[string]string{"error": "Missing pipeline id"})
 		return
 	}
 
@@ -100,41 +103,45 @@ func GetPipelineDetailsHandler(w http.ResponseWriter, r *http.Request) {
 	err := db.Client.DB.
 		From("pipelines").
 		Select("*").
-		Eq("run_id", pipelineID).
+		Eq("id", pipelineID).
 		Execute(&pipelineList)
-	if err != nil || len(pipelineList) == 0 {
+
+	if err != nil {
 		log.Println("❌ Error fetching pipeline details:", err)
-		http.Error(w, "Pipeline not found", http.StatusNotFound)
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]string{"error": "Database error"})
 		return
 	}
+
+	if len(pipelineList) == 0 {
+		w.WriteHeader(http.StatusNotFound)
+		json.NewEncoder(w).Encode(map[string]string{"error": "Pipeline not found"})
+		return
+	}
+
 	pipeline := pipelineList[0]
 
 	var gitList []db.GitInfo
 	if pipeline.GitInfoID != "" {
-		err = db.Client.DB.
+		if err := db.Client.DB.
 			From("git_info").
 			Select("branch,commit_sha,commit_message,author_name,author_email,committed_at,repo_name").
 			Eq("id", pipeline.GitInfoID).
-			Execute(&gitList)
-		if err != nil {
+			Execute(&gitList); err != nil {
 			log.Println("⚠️ Error fetching git_info:", err)
 		}
 	}
 
+	gitInfo := gitList[0]
+
 	var jobs []db.JobStep
 	err = db.Client.DB.
 		From("jobs_steps").
-		Select("id, pipeline_id, job_id::text as job_id, name, type, status, conclusion, started_at, completed_at, duration_sec, attempt").
+		Select("id,pipeline_id,job_id,name,type,status,conclusion,started_at,completed_at,duration_sec,attempt").
 		Eq("pipeline_id", pipeline.ID).
 		Execute(&jobs)
-	if err != nil {
-		log.Println("⚠️ Error fetching jobs_steps:", err)
-	}
 
-	if jobs == nil {
-		jobs = []db.JobStep{}
-	}
-	// Prepare frontend-friendly jobs structure
+	// --- Convert for frontend ---
 	type Step struct {
 		Name     string `json:"name"`
 		Status   string `json:"status"`
@@ -151,80 +158,67 @@ func GetPipelineDetailsHandler(w http.ResponseWriter, r *http.Request) {
 		Steps       []Step `json:"steps"`
 	}
 
-	jobMap := map[string][]Step{}
+	jobMap := make(map[string][]Step)
 	for _, j := range jobs {
+		jobKey := strconv.FormatInt(j.JobID, 10)
 		step := Step{
 			Name:     j.Name,
 			Status:   j.Status,
 			Duration: time.Duration(j.DurationSec * int(time.Second)).String(),
 		}
-		jobMap[j.JobID] = append(jobMap[j.JobID], step)
+		jobMap[jobKey] = append(jobMap[jobKey], step)
 	}
 
 	var jobResponse []Job
+	seen := make(map[string]bool)
 	for _, j := range jobs {
-		exists := false
-		for _, jr := range jobResponse {
-			if jr.ID == j.JobID {
-				exists = true
-				break
-			}
-		}
-		if exists {
+		jobKey := strconv.FormatInt(j.JobID, 10)
+		if seen[jobKey] {
 			continue
 		}
+		seen[jobKey] = true
+
 		jobResponse = append(jobResponse, Job{
-			ID:          j.JobID,
+			ID:          jobKey,
 			Name:        j.Name,
 			Status:      j.Status,
 			StartedAt:   j.StartedAt.Format(time.RFC3339),
 			CompletedAt: j.CompletedAt.Format(time.RFC3339),
 			Duration:    time.Duration(j.DurationSec * int(time.Second)).String(),
-			Steps:       jobMap[j.JobID],
+			Steps:       jobMap[jobKey],
 		})
 	}
 
-	// Combine response
 	response := map[string]interface{}{
-		"pipeline": map[string]interface{}{
-			"runId":  pipeline.RunID,
-			"status": pipeline.Status,
-			"branch": func() string {
+		"runId":  pipeline.RunID,
+		"status": pipeline.Status,
+		"branch": func() string {
 				if len(gitList) > 0 {
 					return gitList[0].Branch
 				}
 				return ""
 			}(),
-			"commitSha": func() string {
+		"commitSha": func() string {
 				if len(gitList) > 0 {
 					return gitList[0].CommitSHA
 				}
 				return ""
 			}(),
-			"startedAt": pipeline.StartedAt.Format(time.RFC3339),
-			"duration": func() string {
-				if !pipeline.StartedAt.IsZero() && !pipeline.CompletedAt.IsZero() {
-					return pipeline.CompletedAt.Sub(pipeline.StartedAt).Truncate(time.Second).String()
-				}
-				return ""
-			}(),
-		},
-		"git_info": func() map[string]string {
-			if len(gitList) > 0 {
-				g := gitList[0]
-				return map[string]string{
-					"commitMessage": g.CommitMessage,
-					"authorName":    g.AuthorName,
-					"authorEmail":   g.AuthorEmail,
-					"committedAt":   g.CommittedAt.Format(time.RFC3339),
-					"repoName":      g.RepoName,
-				}
+		"startedAt": pipeline.StartedAt.Format(time.RFC3339),
+		"duration": func() string {
+			if !pipeline.StartedAt.IsZero() && !pipeline.CompletedAt.IsZero() {
+				return pipeline.CompletedAt.Sub(pipeline.StartedAt).Truncate(time.Second).String()
 			}
-			return nil
+			return ""
 		}(),
+		"commitMessage": gitInfo.CommitMessage,
+		"author": map[string]string{
+			"name":  gitInfo.AuthorName,
+			"email": gitInfo.AuthorEmail,
+		},
+		"repository_url": gitInfo.RepoName,
 		"jobs": jobResponse,
 	}
 
-	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(response)
 }

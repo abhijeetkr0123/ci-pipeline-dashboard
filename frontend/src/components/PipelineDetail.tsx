@@ -12,10 +12,11 @@ import {
   AccordionSummary,
   AccordionDetails,
   Chip,
-  Grid,
   Divider,
   CircularProgress,
 } from '@mui/material';
+
+import Grid from '@mui/material/Grid';
 import CloseIcon from '@mui/icons-material/Close';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import GitHubIcon from '@mui/icons-material/GitHub';
@@ -26,7 +27,7 @@ import { getPipelineRunById } from '../services/pipelineService';
 interface PipelineDetailProps {
   open: boolean;
   onClose: () => void;
-  runId: string | null;
+  pipelineId: string | null;
 }
 
 const getStatusColor = (status?: string) => {
@@ -93,17 +94,20 @@ const JobStatus: React.FC<{ job: Job }> = ({ job }) => {
   );
 };
 
-export default function PipelineDetail({ open, onClose, runId }: PipelineDetailProps) {
+export default function PipelineDetail({ open, onClose, pipelineId }: PipelineDetailProps) {
   const [pipeline, setPipeline] = useState<PipelineRun | null>(null);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (!runId) return;
-
+    console.log(pipelineId)
+    if (!pipelineId) return;
+    console.log("boob")
     const fetchPipeline = async () => {
       setLoading(true);
       try {
-        const data = await getPipelineRunById(runId);
+        const data = await getPipelineRunById(pipelineId);
+        console.log("hehe")
+        console.log(data)
         setPipeline(data);
       } catch (error) {
         console.error('Error fetching pipeline detail:', error);
@@ -114,10 +118,11 @@ export default function PipelineDetail({ open, onClose, runId }: PipelineDetailP
     };
 
     fetchPipeline();
-  }, [runId]);
+  }, [pipelineId]);
 
   if (!open) return null;
 
+  console.log(pipeline)
   const author = pipeline?.author || { name: 'Unknown', email: 'N/A', avatarUrl: '' };
 
   return (

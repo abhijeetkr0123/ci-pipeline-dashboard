@@ -32,7 +32,7 @@ type GitInfo struct {
 type JobStep struct {
 	ID          string    `json:"id"`          // UUID or string if you use GitHub job ID as string
 	PipelineID  string    `json:"pipeline_id"` // UUID FK to pipelines.id
-	JobID       string    `json:"job_id"`      // GitHub job ID as string
+	JobID       int64     `json:"job_id"`      // GitHub job ID as string
 	Name        string    `json:"name"`
 	Type        string    `json:"type"` // "job" or "step"
 	Status      string    `json:"status"`

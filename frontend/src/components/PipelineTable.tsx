@@ -46,7 +46,9 @@ export default function PipelineTable() {
 
   const fetchPipelineRuns = async () => {
     try {
+      console.log("noob")
       const data = await getPipelineRuns();
+      console.log(data)
       setPipelineRuns(data);
     } catch (error) {
       console.error('Error fetching pipeline runs:', error);
@@ -155,7 +157,7 @@ export default function PipelineTable() {
       <PipelineDetail
         open={Boolean(selectedPipeline)}
         onClose={() => setSelectedPipeline(null)}
-        runId={selectedPipeline?.runId || null}
+        pipelineId={selectedPipeline?.id || null}
       />
     </>
   );

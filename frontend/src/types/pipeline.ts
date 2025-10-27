@@ -16,6 +16,7 @@ export interface JobStep {
 }
 
 export interface PipelineRun {
+  id: string;
   runId: string;
   status: 'success' | 'failure' | 'pending' | 'cancelled';
   branch: string;

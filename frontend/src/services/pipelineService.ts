@@ -1,11 +1,17 @@
 import axios from 'axios';
 import type { PipelineRun } from '../types/pipeline';
 
+// Always use the deployed backend URL
+const API_BASE_URL = 'http://localhost:8080';
+
+const api = axios.create({
+  baseURL: API_BASE_URL,
+});
 
 // List view
 export const getPipelineRuns = async (): Promise<PipelineRun[]> => {
   try {
-    const response = await axios.get(`/api/pipelines`);
+    const response = await api.get('/api/pipelines');
     return response.data;
   } catch (error) {
     console.error('Error fetching pipeline runs:', error);
@@ -14,9 +20,9 @@ export const getPipelineRuns = async (): Promise<PipelineRun[]> => {
 };
 
 // Detail view
-export const getPipelineRunById = async (runId: string): Promise<PipelineRun> => {
+export const getPipelineRunById = async (pipelineId: string): Promise<PipelineRun> => {
   try {
-    const response = await axios.get(`/api/pipelines/details?id=${runId}`);
+    const response = await api.get(`/api/pipelines/details?id=${pipelineId}`);
     return response.data; // Assumes backend returns object matching PipelineRun type
   } catch (error) {
     console.error('Error fetching pipeline run detail:', error);

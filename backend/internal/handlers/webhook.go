@@ -16,6 +16,15 @@ import (
 	"github.com/abhijeet/ci-pipeline-dashboard/internal/db"
 )
 
+func parseJobID(idStr string) int64 {
+	id, err := strconv.ParseInt(idStr, 10, 64)
+	if err != nil {
+		// fallback to 0 if parsing fails, but log it if you want
+		return 0
+	}
+	return id
+}
+
 // GitHubWebhookPayload matches the workflow_run payload from GitHub
 type GitHubWebhookPayload struct {
 	Workflow struct {
@@ -136,7 +145,7 @@ func fetchJobsWithAttempts(owner, repo, runID, pipelineID string) ([]db.JobStep,
 		}
 
 		out = append(out, db.JobStep{
-			JobID:       jobIDStr, // string now
+			JobID:       parseJobID(jobIDStr), // string now
 			Name:        j.Name,
 			Type:        "job",
 			Status:      j.Status,
