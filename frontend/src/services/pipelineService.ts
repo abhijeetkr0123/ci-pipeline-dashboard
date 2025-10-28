@@ -1,7 +1,7 @@
 import axios from 'axios';
 import type { PipelineRun } from '../types/pipeline';
 
-// Always use the deployed backend URL
+// Use the deployed backend URL
 const API_BASE_URL = 'https://ci-pipeline-dashboard.onrender.com';
 
 const api = axios.create({

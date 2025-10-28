@@ -16,7 +16,6 @@ import {
   CircularProgress,
 } from '@mui/material';
 
-import Grid from '@mui/material/Grid';
 import CloseIcon from '@mui/icons-material/Close';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import GitHubIcon from '@mui/icons-material/GitHub';
@@ -66,23 +65,26 @@ const JobStatus: React.FC<{ job: Job }> = ({ job }) => {
           {job.steps?.length ? (
             job.steps.map((step, idx) => (
               <Box key={idx} sx={{ mb: 1, pl: 2 }}>
-                <Grid container spacing={2} alignItems="center">
-                  <Grid item xs>
-                    <Typography variant="body2">{step.name || '-'}</Typography>
-                  </Grid>
-                  <Grid item>
-                    <Chip
-                      label={(step.status || 'unknown').toUpperCase()}
-                      size="small"
-                      sx={{ backgroundColor: getStatusColor(step.status), color: 'white' }}
-                    />
-                  </Grid>
-                  <Grid item>
-                    <Typography variant="body2" color="text.secondary">
-                      {step.duration || '-'}
-                    </Typography>
-                  </Grid>
-                </Grid>
+                <Box
+                  sx={{
+                    display: 'grid',
+                    gridTemplateColumns: '1fr auto auto',
+                    alignItems: 'center',
+                    gap: 2,
+                  }}
+                >
+                  <Typography variant="body2">{step.name || '-'}</Typography>
+
+                  <Chip
+                    label={(step.status || 'unknown').toUpperCase()}
+                    size="small"
+                    sx={{ backgroundColor: getStatusColor(step.status), color: 'white' }}
+                  />
+
+                  <Typography variant="body2" color="text.secondary">
+                    {step.duration || '-'}
+                  </Typography>
+                </Box>
               </Box>
             ))
           ) : (
@@ -126,99 +128,136 @@ export default function PipelineDetail({ open, onClose, pipelineId }: PipelineDe
   const author = pipeline?.author || { name: 'Unknown', email: 'N/A', avatarUrl: '' };
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
-      <DialogTitle>
-        <Box display="flex" alignItems="center" justifyContent="space-between">
-          <Typography variant="h6">Pipeline Run: {pipeline?.runId || '-'}</Typography>
-          <IconButton onClick={onClose}>
-            <CloseIcon />
-          </IconButton>
+  <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
+    <DialogTitle>
+      <Box display="flex" alignItems="center" justifyContent="space-between">
+        <Typography variant="h6">Pipeline Run: {pipeline?.runId || '-'}</Typography>
+        <IconButton onClick={onClose}>
+          <CloseIcon />
+        </IconButton>
+      </Box>
+    </DialogTitle>
+
+    <DialogContent>
+      {loading ? (
+        <Box display="flex" justifyContent="center" alignItems="center" minHeight="200px">
+          <CircularProgress />
         </Box>
-      </DialogTitle>
+      ) : !pipeline ? (
+        <Typography>No data available</Typography>
+      ) : (
+        <>
+          {/* Author & Commit Info */}
+          <Box sx={{ mb: 3 }}>
+            <Box
+              sx={{
+                display: 'grid',
+                gridTemplateColumns: '1fr',
+                gap: 2,
+              }}
+            >
+              {/* Author */}
+              <Box display="flex" alignItems="center" gap={2} mb={2}>
+                <Avatar src={author.avatarUrl} alt={author.name} />
+                <Box>
+                  <Typography variant="subtitle1">{author.name}</Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    {author.email}
+                  </Typography>
+                </Box>
+              </Box>
 
-      <DialogContent>
-        {loading ? (
-          <Box display="flex" justifyContent="center" alignItems="center" minHeight="200px">
-            <CircularProgress />
+              {/* Commit Info */}
+              <Box>
+                <Typography variant="body1" sx={{ mb: 1 }}>
+                  {pipeline.commitMessage || 'No commit message'}
+                </Typography>
+                <Box display="flex" gap={1} alignItems="center">
+                  <GitHubIcon fontSize="small" />
+                  <Link
+                    href={`${pipeline.repositoryUrl || '#'}${
+                      pipeline.commitSha ? `/commit/${pipeline.commitSha}` : ''
+                    }`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    {pipeline.commitSha || '-'}
+                  </Link>
+                </Box>
+              </Box>
+            </Box>
           </Box>
-        ) : !pipeline ? (
-          <Typography>No data available</Typography>
-        ) : (
-          <>
-            {/* Author & Commit Info */}
-            <Box sx={{ mb: 3 }}>
-              <Grid container spacing={2}>
-                <Grid item xs={12}>
-                  <Box display="flex" alignItems="center" gap={2} mb={2}>
-                    <Avatar src={author.avatarUrl} alt={author.name} />
-                    <Box>
-                      <Typography variant="subtitle1">{author.name}</Typography>
-                      <Typography variant="body2" color="text.secondary">{author.email}</Typography>
-                    </Box>
-                  </Box>
-                </Grid>
 
-                <Grid item xs={12}>
-                  <Typography variant="body1" sx={{ mb: 1 }}>
-                    {pipeline.commitMessage || 'No commit message'}
-                  </Typography>
-                  <Box display="flex" gap={1} alignItems="center">
-                    <GitHubIcon fontSize="small" />
-                    <Link
-                      href={`${pipeline.repositoryUrl || '#'}${pipeline.commitSha ? `/commit/${pipeline.commitSha}` : ''}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      {pipeline.commitSha || '-'}
-                    </Link>
-                  </Box>
-                </Grid>
-              </Grid>
-            </Box>
+          {/* Pipeline Info */}
+          <Divider sx={{ my: 2 }} />
+          <Box sx={{ mb: 2 }}>
+            <Typography variant="h6" gutterBottom>
+              Pipeline Information
+            </Typography>
 
-            {/* Pipeline Info */}
-            <Divider sx={{ my: 2 }} />
-            <Box sx={{ mb: 2 }}>
-              <Typography variant="h6" gutterBottom>Pipeline Information</Typography>
-              <Grid container spacing={2}>
-                <Grid item xs={6}>
-                  <Typography variant="body2" color="text.secondary">Branch</Typography>
-                  <Typography variant="body1">{pipeline.branch || '-'}</Typography>
-                </Grid>
-                <Grid item xs={6}>
-                  <Typography variant="body2" color="text.secondary">Started At</Typography>
-                  <Typography variant="body1">
-                    {pipeline.startedAt ? format(parseISO(pipeline.startedAt), 'PPpp') : '-'}
-                  </Typography>
-                </Grid>
-                <Grid item xs={6}>
-                  <Typography variant="body2" color="text.secondary">Status</Typography>
-                  <Chip
-                    label={(pipeline.status || 'unknown').toUpperCase()}
-                    size="small"
-                    sx={{ backgroundColor: getStatusColor(pipeline.status), color: 'white', mt: 0.5 }}
-                  />
-                </Grid>
-                <Grid item xs={6}>
-                  <Typography variant="body2" color="text.secondary">Duration</Typography>
-                  <Typography variant="body1">{pipeline.duration || '-'}</Typography>
-                </Grid>
-              </Grid>
-            </Box>
+            <Box
+              sx={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+                gap: 2,
+              }}
+            >
+              <Box>
+                <Typography variant="body2" color="text.secondary">
+                  Branch
+                </Typography>
+                <Typography variant="body1">{pipeline.branch || '-'}</Typography>
+              </Box>
 
-            {/* Jobs */}
-            <Divider sx={{ my: 2 }} />
-            <Box>
-              <Typography variant="h6" gutterBottom>Jobs</Typography>
-              {pipeline.jobs?.length ? (
-                pipeline.jobs.map((job) => <JobStatus key={job.id} job={job} />)
-              ) : (
-                <Typography variant="body2">No jobs available</Typography>
-              )}
+              <Box>
+                <Typography variant="body2" color="text.secondary">
+                  Started At
+                </Typography>
+                <Typography variant="body1">
+                  {pipeline.startedAt ? format(parseISO(pipeline.startedAt), 'PPpp') : '-'}
+                </Typography>
+              </Box>
+
+              <Box>
+                <Typography variant="body2" color="text.secondary">
+                  Status
+                </Typography>
+                <Chip
+                  label={(pipeline.status || 'unknown').toUpperCase()}
+                  size="small"
+                  sx={{
+                    backgroundColor: getStatusColor(pipeline.status),
+                    color: 'white',
+                    mt: 0.5,
+                  }}
+                />
+              </Box>
+
+              <Box>
+                <Typography variant="body2" color="text.secondary">
+                  Duration
+                </Typography>
+                <Typography variant="body1">{pipeline.duration || '-'}</Typography>
+              </Box>
             </Box>
-          </>
-        )}
-      </DialogContent>
-    </Dialog>
-  );
+          </Box>
+
+          {/* Jobs */}
+          <Divider sx={{ my: 2 }} />
+          <Box>
+            <Typography variant="h6" gutterBottom>
+              Jobs
+            </Typography>
+            {pipeline.jobs?.length ? (
+              pipeline.jobs.map((job) => <JobStatus key={job.id} job={job} />)
+            ) : (
+              <Typography variant="body2">No jobs available</Typography>
+            )}
+          </Box>
+        </>
+      )}
+    </DialogContent>
+  </Dialog>
+);
+
 }
