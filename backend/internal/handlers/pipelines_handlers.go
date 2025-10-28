@@ -24,7 +24,7 @@ func GetPipelinesHandler(w http.ResponseWriter, r *http.Request) {
 		Select("id,run_id,status,started_at,completed_at,git_info_id").
 		Execute(&pipelines)
 	if err != nil {
-		log.Println("❌ Error fetching pipelines:", err)
+		log.Println("Error fetching pipelines:", err)
 		http.Error(w, "Failed to fetch pipelines", http.StatusInternalServerError)
 		return
 	}
@@ -52,7 +52,7 @@ func GetPipelinesHandler(w http.ResponseWriter, r *http.Request) {
 				Eq("id", p.GitInfoID).
 				Execute(&gitList)
 			if err != nil {
-				log.Println("⚠️ Error fetching git_info:", err)
+				log.Println("Error fetching git_info:", err)
 			}
 		}
 
@@ -107,7 +107,7 @@ func GetPipelineDetailsHandler(w http.ResponseWriter, r *http.Request) {
 		Execute(&pipelineList)
 
 	if err != nil {
-		log.Println("❌ Error fetching pipeline details:", err)
+		log.Println("Error fetching pipeline details:", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(map[string]string{"error": "Database error"})
 		return
@@ -128,7 +128,7 @@ func GetPipelineDetailsHandler(w http.ResponseWriter, r *http.Request) {
 			Select("branch,commit_sha,commit_message,author_name,author_email,committed_at,repo_name").
 			Eq("id", pipeline.GitInfoID).
 			Execute(&gitList); err != nil {
-			log.Println("⚠️ Error fetching git_info:", err)
+			log.Println("Error fetching git_info:", err)
 		}
 	}
 

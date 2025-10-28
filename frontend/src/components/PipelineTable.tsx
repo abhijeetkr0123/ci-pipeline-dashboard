@@ -46,9 +46,7 @@ export default function PipelineTable() {
 
   const fetchPipelineRuns = async () => {
     try {
-      console.log("noob")
       const data = await getPipelineRuns();
-      console.log(data)
       setPipelineRuns(data);
     } catch (error) {
       console.error('Error fetching pipeline runs:', error);

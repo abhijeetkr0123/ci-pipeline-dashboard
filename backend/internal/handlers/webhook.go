@@ -206,7 +206,7 @@ func WebhookHandler(w http.ResponseWriter, r *http.Request) {
 
 	gitID, err := db.UpsertGitInfo(git)
 	if err != nil {
-		log.Println("❌ UpsertGitInfo warning:", err)
+		log.Println("UpsertGitInfo warning:", err)
 	}
 
 	// --- upsert pipeline ---
@@ -222,11 +222,11 @@ func WebhookHandler(w http.ResponseWriter, r *http.Request) {
 
 	pipelineID, err := db.UpsertPipeline(pipeline)
 	if err != nil {
-		log.Println("❌ UpsertPipeline error:", err)
+		log.Println("UpsertPipeline error:", err)
 		http.Error(w, "failed to upsert pipeline", http.StatusInternalServerError)
 		return
 	}
-	log.Printf("✅ Pipeline upserted successfully: %s", pipelineID)
+	log.Printf("Pipeline upserted successfully: %s", pipelineID)
 
 	// --- fetch jobs with attempt handling ---
 	jobs, err := fetchJobsWithAttempts(
@@ -236,16 +236,16 @@ func WebhookHandler(w http.ResponseWriter, r *http.Request) {
 		pipelineID,
 	)
 	if err != nil {
-		log.Println("⚠️ fetchJobs warning:", err)
+		log.Println("fetchJobs warning:", err)
 	} else {
 		if err := db.UpsertJobSteps(jobs); err != nil {
-			log.Println("⚠️ UpsertJobSteps warning:", err)
+			log.Println("UpsertJobSteps warning:", err)
 		} else {
-			log.Printf("✅ Upserted %d job steps for pipeline %s", len(jobs), pipelineID)
+			log.Printf("Upserted %d job steps for pipeline %s", len(jobs), pipelineID)
 		}
 	}
 
-	log.Printf("✅ Processed workflow run %d -> pipeline id %s", payload.WorkflowRun.ID, pipelineID)
+	log.Printf("Processed workflow run %d -> pipeline id %s", payload.WorkflowRun.ID, pipelineID)
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte("webhook processed"))
 }

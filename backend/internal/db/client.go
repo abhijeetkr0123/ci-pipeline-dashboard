@@ -18,11 +18,11 @@ func InitDB() {
 	supabaseKey := os.Getenv("SUPABASE_KEY")
 
 	if supabaseURL == "" || supabaseKey == "" {
-		log.Fatal("❌ Missing SUPABASE_URL or SUPABASE_KEY in environment variables")
+		log.Fatal("Missing SUPABASE_URL or SUPABASE_KEY in environment variables")
 	}
 
 	Client = supabase.CreateClient(supabaseURL, supabaseKey)
-	log.Println("✅ Connected to Supabase successfully")
+	log.Println("Connected to Supabase successfully")
 }
 
 // UpsertGitInfo inserts or fetches GitInfo for a commit
@@ -35,7 +35,7 @@ func UpsertGitInfo(g GitInfo) (string, error) {
 		Eq("commit_sha", g.CommitSHA).
 		Execute(&existing)
 	if err != nil {
-		log.Println("❌ Error checking existing GitInfo:", err)
+		log.Println("Error checking existing GitInfo:", err)
 		return "", err
 	}
 
@@ -51,11 +51,11 @@ func UpsertGitInfo(g GitInfo) (string, error) {
 		Insert(g).
 		Execute(nil)
 	if err != nil {
-		log.Println("❌ Error inserting GitInfo:", err)
+		log.Println("Error inserting GitInfo:", err)
 		return "", err
 	}
 
-	log.Printf("✅ GitInfo inserted successfully: %s", id)
+	log.Printf("GitInfo inserted successfully: %s", id)
 	return id, nil
 }
 
@@ -74,7 +74,7 @@ func UpsertPipeline(p Pipeline) (string, error) {
 		Eq("run_id", runIDStr).
 		Execute(&existing)
 	if err != nil {
-		log.Println("❌ Error checking existing pipeline:", err)
+		log.Println("Error checking existing pipeline:", err)
 		return "", err
 	}
 
@@ -93,11 +93,11 @@ func UpsertPipeline(p Pipeline) (string, error) {
 			Eq("id", existing[0].ID). // UUID
 			Execute(nil)
 		if err != nil {
-			log.Println("❌ Error updating pipeline:", err)
+			log.Println("Error updating pipeline:", err)
 			return "", err
 		}
 
-		log.Printf("✅ Pipeline updated successfully: %s", existing[0].ID)
+		log.Printf("Pipeline updated successfully: %s", existing[0].ID)
 		return existing[0].ID, nil
 	}
 
@@ -108,11 +108,11 @@ func UpsertPipeline(p Pipeline) (string, error) {
 		Insert(p).
 		Execute(nil)
 	if err != nil {
-		log.Println("❌ Error inserting pipeline:", err)
+		log.Println("Error inserting pipeline:", err)
 		return "", err
 	}
 
-	log.Printf("✅ Pipeline inserted successfully: %s", p.ID)
+	log.Printf("Pipeline inserted successfully: %s", p.ID)
 	return p.ID, nil
 }
 
@@ -134,10 +134,10 @@ func UpsertJobSteps(jobs []JobStep) error {
 		Insert(jobs).
 		Execute(nil)
 	if err != nil {
-		log.Println("❌ Error inserting JobSteps:", err)
+		log.Println("Error inserting JobSteps:", err)
 		return err
 	}
 
-	log.Printf("✅ Inserted %d job steps", len(jobs))
+	log.Printf("Inserted %d job steps", len(jobs))
 	return nil
 }

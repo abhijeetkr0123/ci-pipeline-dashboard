@@ -101,15 +101,11 @@ export default function PipelineDetail({ open, onClose, pipelineId }: PipelineDe
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    console.log(pipelineId)
     if (!pipelineId) return;
-    console.log("boob")
     const fetchPipeline = async () => {
       setLoading(true);
       try {
         const data = await getPipelineRunById(pipelineId);
-        console.log("hehe")
-        console.log(data)
         setPipeline(data);
       } catch (error) {
         console.error('Error fetching pipeline detail:', error);
@@ -124,7 +120,6 @@ export default function PipelineDetail({ open, onClose, pipelineId }: PipelineDe
 
   if (!open) return null;
 
-  console.log(pipeline)
   const author = pipeline?.author || { name: 'Unknown', email: 'N/A', avatarUrl: '' };
 
   return (
